@@ -27,22 +27,118 @@
 </div>
 </script>
 
+<script type="text/x-templae" id="user-detail">
+    <div>
+        <div class="loading" v-if="loading">読み込み中...</div>
+        <div class="error" vif="error">{{error}}</div>
+        <div v-if="user">
+            <h2>{{ user.name }}</h2>
+            <p>{{ user.description }}</p>
+        </div>
+    </div>
+</script>
+
+<script type="text/x-template" id="user-create">
+    <div>
+        <div class="sending" v-if="sending">Sending...</div>
+        <div>
+            <h2>新規ユーザ作成</h2>
+            <div>
+                <label>名前:</label>
+                <input type="text" v-model="user.name">
+            </div>
+        </div>
+        <div>
+            <label>説明文:</label>
+            <textarea cols="30" rows="10" v-model="user.description"></textarea>
+        </div>
+        <div class="error" v-if="error"></div>
+        <div>
+            <input type="button" @click="createUser" value="送信">
+        </div>
+    </div>
+</script>
 <!-- アプリケーション記載部分 -->
 <script>
+    var userData = [
+        {
+            id: 1,
+            name: 'Takuya Tejima',
+            description: '東南アジアではたらくエンジニアです。',
+        },
+        {
+            id: 2,
+            name: 'Yohei Noda',
+            description: 'アウトドア、フットサルが趣味のエンジニアです。'
+        }
+    ];
+
+    var postUser = function (params, callback) {
+        setTimeout( function () {
+            //idは追加されるごとに自動的にincrementされる
+            params.id = userData.length + 1;
+            userData.push(params)
+            callback(null, params)
+        },  1000)
+    }
+
     var getUsers = function ( callback ) {
         setTimeout( function () {
             callback( null, [
                 {
                     id: 1,
                     name: 'Takuya Tejima',
+                    description: '東南アジアではたらくエンジニアです。',
                 },
                 {
                     id: 2,
                     name: 'Yohei Noda',
+                    description: 'アウトドア、フットサルが趣味のエンジニアです。'
                 }
             ])
         }, 1000)
-    }
+    };
+
+    var getUser = function (userId, callback) {
+        setTimeout(function () {
+            var filteredUsers = userData.filter( function (user) {
+                return user.id === parseInt(userId, 10);
+            });
+            callback(null, filteredUsers && filteredUsers[0])
+        }, 1000)
+    };
+
+    var UserDetail = {
+        template: '#user-detail',
+        data: function () {
+            return {
+                loading: false,
+                user: null,
+                error: null
+            }
+        },
+        created: function () {
+            this.fetchData()
+        },
+        watch: {
+            '$route': 'fetchData'
+        },
+        methods: {
+            fetchData: function () {
+                this.loading = true;
+                //this.$ropute.params.userIdに現在のURL上のパラメータに対応したuserIdが格納される
+                getUser(this.$route.params.userId, (function (err, user) {
+                    this.loading = false;
+                    if (err) {
+                        this.error = err.toString();
+                    } else {
+                        this.user = user;
+                    }
+                }).bind(this))
+            }
+        }
+    };
+
     var UserList = {
         template: "#user-list",
         data: function () {
@@ -78,6 +174,46 @@
         }
     }
 
+    var UserCreate = {
+        template: '#user-create',
+        data: function () {
+            return {
+                sending: false,
+                user: this.defaultUser(),
+                error: null
+            }
+        },
+        created: function () {},
+        methods: {
+            defaultUser: function () {
+                return {
+                    name: '',
+                    description: ''
+                }
+            },
+            createUser: function () {
+                if (this.user.name.trim() === '') {
+                    this.error = 'Nameは必須です';
+                    return
+                }
+                if (this.user.description.trim() === '') {
+                    this.error = 'Descriptionは必須です';
+                    return
+                }
+                postUser(this.user, (function (err, user) {
+                    this.sending = false;
+                    if(err){
+                        this.error = err.toString();
+                    } else {
+                        this.error = null;
+                        this.user = this.defaultUser()
+                        alert('新規ユーザが作成されました')
+                        this.$router.push('/users')
+                    }
+                }).bind(this))
+            }
+        }
+    };
     var router = new VueRouter({
         routes: [
             {
@@ -89,6 +225,14 @@
             {
                 path: '/users',
                 component: UserList
+            },
+            {
+                path: '/user/new',
+                component: UserCreate
+            },
+            {
+                path: '/user/:userId',
+                component: UserDetail
             }
         ]
     })
