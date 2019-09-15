@@ -7,6 +7,33 @@
     <script src="https://unpkg.com/vue-router@3.0.1"></script>
 </head>
 <body>
+<div id="app">
+    <router-link to="/top">とっぷ</router-link>
+    <router-link to="/users">ゆーざ</router-link>
+    <router-view></router-view>
+</div>
+<script>
+    var router = new VueRouter({
+        //コンポーネントをマッピングしたルート定義を渡す
+        routes: [
+            {
+                path: '/top',
+                component: {
+                    template: '<div>TOPです</div>'
+                }
+            },
+            {
+                path: '/users',
+                component:{
+                    template: '<div>ユーザ一覧ページです。</div>'
+                }
+            }
+        ]
+    })
 
+    var app = new Vue({
+        router: router
+    }).$mount('#app')
+</script>
 </body>
 </html>
